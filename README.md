@@ -21,7 +21,7 @@ EZ Odoo Web Services
     详见 com.ecfront.odoows.OdooWSSpec
 
 ### Check out sources
-`git clone https://github.com/gudaoxuri/ez-storage.git`
+`git clone https://github.com/gudaoxuri/ez-odoo-ws.git`
 
 ### License
 
