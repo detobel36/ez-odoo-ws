@@ -2,6 +2,7 @@ package com.ecfront.odoows
 
 import java.util
 
+import scala.annotation.StaticAnnotation
 import scala.beans.BeanProperty
 
 case class LoginInfo(uid: Int, password: String)
@@ -20,10 +21,28 @@ case class PageModel[M](
 abstract class OdooModel {
   @BeanProperty var id: Int = _
   @BeanProperty var display_name: String = _
-  //array[id#int,name#string]
-  @BeanProperty var create_uid: Array[Any] = _
+  @BeanProperty
+  @OManyToOne var create_uid: Int = _
   @BeanProperty var create_date: util.Date = _
-  //array[id#int,name#string]
-  @BeanProperty var write_uid: Array[Any] = _
+  @BeanProperty
+  @OManyToOne var write_uid: Int = _
   @BeanProperty var write_date: util.Date = _
 }
+
+case class Odoo(name: String, label: String) extends StaticAnnotation
+
+@scala.annotation.meta.field
+case class OManyToOne() extends StaticAnnotation
+
+@scala.annotation.meta.field
+case class OText() extends StaticAnnotation
+
+@scala.annotation.meta.field
+case class ODate() extends StaticAnnotation
+
+@scala.annotation.meta.field
+case class OSelection() extends StaticAnnotation
+
+@scala.annotation.meta.field
+case class OTransient() extends StaticAnnotation
+

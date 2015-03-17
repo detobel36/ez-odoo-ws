@@ -1,4 +1,4 @@
-EZ Odoo Web Services
+EZ Odoo Web Service
 ===
 ### Odoo 8.x WS的Scala实现 （Building）
 
