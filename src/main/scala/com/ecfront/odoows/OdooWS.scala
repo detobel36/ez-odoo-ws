@@ -286,6 +286,18 @@ object OdooWS {
     }.map {
       item =>
         item._1 match {
+          case key if fields(key)._2.exists(t => t.getClass == classOf[OManyToMany]) =>
+            item._1 -> new util.ArrayList[Any]() {
+              {
+                add(new util.ArrayList[Any]() {
+                  {
+                    add(6)
+                    add(0)
+                    add(XmlRPCHelper.toJavaList(item._2.asInstanceOf[List[Int]]))
+                  }
+                })
+              }
+            }
           case key if fields(key)._2.exists(_.getClass == classOf[ODate]) =>
             item._2 match {
               case v: util.Date =>

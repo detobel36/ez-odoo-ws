@@ -35,6 +35,12 @@ case class Odoo(name: String, label: String) extends StaticAnnotation
 case class OManyToOne() extends StaticAnnotation
 
 @scala.annotation.meta.field
+case class OOneToMany() extends StaticAnnotation
+
+@scala.annotation.meta.field
+case class OManyToMany() extends StaticAnnotation
+
+@scala.annotation.meta.field
 case class OText() extends StaticAnnotation
 
 @scala.annotation.meta.field
