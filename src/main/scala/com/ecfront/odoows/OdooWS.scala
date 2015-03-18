@@ -68,7 +68,7 @@ case class OdooWS(url: String, db: String) extends LazyLogging {
                 case t if t == "string" || t == "char" => "char"
                 case t if t == "int" || t == "integer" || t == "long" || t == "short" => "integer"
                 case t if t == "boolean" || t == "bool" => "boolean"
-                case t if t == "float" || t == "double" => "float"
+                case t if t == "double" => "float"
                 case t if t.endsWith("date") => "datetime"
                 case _ => throw new Exception("Not support type:" + item._2)
               })

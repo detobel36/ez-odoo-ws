@@ -3,19 +3,25 @@ package com.ecfront.odoows.helper
 import java.net.URL
 import java.util
 
+import com.typesafe.scalalogging.slf4j.LazyLogging
 import org.apache.xmlrpc.client.{XmlRpcClient, XmlRpcClientConfigImpl}
 
 import scala.collection.JavaConversions._
 
-case class XmlRPCHelper(baseUrl: String) {
+case class XmlRPCHelper(baseUrl: String) extends LazyLogging {
 
   private val client = new XmlRpcClient()
 
   def request(path: String, method: String, args: List[Any] = List()): Any = {
     val commonConfig = new XmlRpcClientConfigImpl()
     commonConfig.setServerURL(new URL(baseUrl + path))
-    client.execute(commonConfig, method, args)
+    try {
+      client.execute(commonConfig, method, args)
+    } catch {
+      case e: Exception => logger.error("RPC execute error : " + e.getMessage, e)
+    }
   }
+
 }
 
 object XmlRPCHelper {

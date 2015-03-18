@@ -15,12 +15,12 @@ class OpenacademyWSSpec extends FunSuite {
 
   test("Openacademy WS test") {
 
-  /*  val course=Course()
-        course.name="计算机65"
-        course.description="计算机课程。。。"
-        course.responsible_id=1
-        val id=ws.record.create(course,classOf[Course],uid)
-        val cou=ws.record.get(id,classOf[Course],uid)*/
+    /*  val course=Course()
+          course.name="计算机65"
+          course.description="计算机课程。。。"
+          course.responsible_id=1
+          val id=ws.record.create(course,classOf[Course],uid)
+          val cou=ws.record.get(id,classOf[Course],uid)*/
 
     //val courses=ws.record.page(1,5,List(),classOf[Course],uid)
 
@@ -48,7 +48,8 @@ case class Course() extends OdooModel {
   @OText var description: String = _
   @BeanProperty
   @OManyToOne var responsible_id: Int = _
-  @BeanProperty var session_ids:List[Int] = _
+  @BeanProperty
+  @OOneToMany var session_ids: List[Int] = _
 }
 
 @Odoo(name = "openacademy.session", label = "选课")
