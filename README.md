@@ -23,6 +23,7 @@ EZ Odoo Web Service
 ## Step2 定义模型（如使用原始的Map可忽略此步骤）
 
 所有模型都继承`com.ecfront.odoows.OdooModel`，此父类包含了 `id` `display_name` `create_uid` `create_date` `write_uid` `write_date` ，这几个字段无需手工赋值
+
 所有模型都使用`@Odoo(name = "模型名称", label = "模型显示名称")`注解，自定义模型（新模型）都要以`x_` 开头
 
 *可以是新的模型也可以是已存在的，如果是已存在的模型请确保Odoo中所有字段（compute类型，store为false的可加可不加）都被映射*
