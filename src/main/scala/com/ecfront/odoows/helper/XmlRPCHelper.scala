@@ -30,6 +30,13 @@ object XmlRPCHelper {
 
   def toJavaList[E](list: List[E]): util.ArrayList[E] = new util.ArrayList[E](list)
 
-  def toJavaLists[E](list: List[List[E]]): util.ArrayList[util.ArrayList[E]] = toJavaList(list.map(toJavaList))
+  def toJavaLists(list: List[Any]): util.ArrayList[Any] = {
+    val l:List[Any] = list.map {
+      case e: List[Any] => new util.ArrayList(e)
+      case e: String => e
+      case item => item
+    }
+    new util.ArrayList[Any](l)
+  }
 
 }
