@@ -43,7 +43,7 @@ case class OdooWS(url: String, db: String) extends LazyLogging {
       val odoo = OdooWS.getClassInfo(clazz)
       val existIds = record.findIds(List(List("model", "=", odoo.name)), "ir.model", uid)
       if (existIds.nonEmpty) {
-        record.delete(existIds(0), "ir.model", uid)
+        record.delete(existIds.head, "ir.model", uid)
       }
       val id = rpc.request("/xmlrpc/2/object", "execute_kw",
         List(db, uid, session(uid).password, "ir.model", "create",
@@ -224,7 +224,7 @@ object OdooWS {
         o.toMap.asInstanceOf[E]
       case o: util.HashMap[String, Any] if clazz != classOf[Map[String, Any]] =>
         val fields = geFieldsInfo(clazz)
-        val value = o.filter(_._1 != "__last_update").map {
+        val value = o.filter(item => fields.contains(item._1)).map {
           item =>
             item._1 match {
               case key if fields(key)._2.exists(_.getClass == classOf[OManyToOne]) =>
