@@ -189,6 +189,13 @@ case class OdooWS(url: String, db: String) extends LazyLogging {
     rpc.request("/xmlrpc/2/object", "execute_kw",
       List(db, uid, session(uid).password, modelName, methodName,
         condition, parameters))
+
+  def execute[E](condition: util.ArrayList[Any], parameters: util.HashMap[String, Any], modelName: String, methodName: String, uid: Int,clazz:Class[E]): E = {
+    val result = rpc.request("/xmlrpc/2/object", "execute_kw",
+      List(db, uid, session(uid).password, modelName, methodName,
+        condition, parameters))
+    OdooWS.toObject(result,clazz)
+  }
 }
 
 
