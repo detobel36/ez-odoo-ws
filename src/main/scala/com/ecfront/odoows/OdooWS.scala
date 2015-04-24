@@ -88,7 +88,7 @@ case class OdooWS(url: String, db: String) extends LazyLogging {
 
   object record {
 
-    def create[M <: OdooModel](record: M, clazz: Class[M], uid: Int): Int = doCreate(OdooWS.getValues(record), OdooWS.getClassInfo(clazz).name, uid)
+    def create[M <: OdooModel](record: M, clazz: Class[M], uid: Int): Int = doCreate(OdooWS.getValues(record, 0), OdooWS.getClassInfo(clazz).name, uid)
 
     def create(record: Map[String, Any], modeName: String, uid: Int): Int = doCreate(XmlRPCHelper.toJavaMap(record), modeName, uid)
 
@@ -97,7 +97,7 @@ case class OdooWS(url: String, db: String) extends LazyLogging {
         XmlRPCHelper.toJavaList(List(record))
         , emptyMap)).asInstanceOf[java.lang.Integer].toInt
 
-    def update[M <: OdooModel](record: M, clazz: Class[M], uid: Int): Boolean = doUpdate(record.id, OdooWS.getValues(record), OdooWS.getClassInfo(clazz).name, uid)
+    def update[M <: OdooModel](record: M, clazz: Class[M], uid: Int): Boolean = doUpdate(record.id, OdooWS.getValues(record, 1), OdooWS.getClassInfo(clazz).name, uid)
 
     def update(id: Int, record: Map[String, Any], modeName: String, uid: Int): Boolean = doUpdate(id, XmlRPCHelper.toJavaMap(record), modeName, uid)
 
@@ -276,7 +276,7 @@ object OdooWS {
     }
   }
 
-  private def getValues[M <: OdooModel](record: M): util.Map[String, Any] = {
+  def getValues[M <: OdooModel](record: M, model: Int): util.Map[String, Any] = {
     val fields = geFieldsInfo(record.getClass)
     XmlRPCHelper.toJavaMap(BeanHelper.findValues(record, OdooWS.filterNames).filter {
       item =>
@@ -286,17 +286,34 @@ object OdooWS {
     }.map {
       item =>
         item._1 match {
-          case key if fields(key)._2.exists(t => t.getClass == classOf[OManyToMany]) =>
-            item._1 -> new util.ArrayList[Any]() {
-              {
-                add(new util.ArrayList[Any]() {
+          case key if fields(key)._2.exists(t => t.getClass == classOf[OManyToMany] || t.getClass == classOf[OOneToMany]) =>
+            val array = new util.ArrayList[Any]()
+            model match {
+              case 0 =>
+                item._2.asInstanceOf[List[OdooModel]].foreach {
+                  m =>
+                    array.add(new util.ArrayList[Any]() {
+                      {
+                        add(0)
+                        add(0)
+                        add(OdooWS.getValues(m, 0))
+                      }
+                    })
+                }
+                item._1 -> array
+              case 1 =>
+                //TODO 暂时只支持这种更新
+                item._1 -> new util.ArrayList[Any]() {
                   {
-                    add(6)
-                    add(0)
-                    add(XmlRPCHelper.toJavaList(item._2.asInstanceOf[List[Int]]))
+                    add(new util.ArrayList[Any]() {
+                      {
+                        add(6)
+                        add(0)
+                        add(XmlRPCHelper.toJavaList(item._2.asInstanceOf[List[Int]]))
+                      }
+                    })
                   }
-                })
-              }
+                }
             }
           case key if fields(key)._2.exists(_.getClass == classOf[ODate]) =>
             item._2 match {
