@@ -19,7 +19,7 @@ case class OdooWS(url: String, db: String) extends LazyLogging {
   private val rpc = new XmlRPCHelper(url)
   //保存登录信息
   private val session = collection.mutable.Map[Int, LoginInfo]()
-  private val emptyMap = new java.util.HashMap()
+  val emptyMap = new java.util.HashMap[String, Any]()
 
 
   object common {
@@ -45,15 +45,13 @@ case class OdooWS(url: String, db: String) extends LazyLogging {
       if (existIds.nonEmpty) {
         record.delete(existIds.head, "ir.model", uid)
       }
-      val id = rpc.request("/xmlrpc/2/object", "execute_kw",
-        List(db, uid, session(uid).password, "ir.model", "create",
-          XmlRPCHelper.toJavaList(List(new util.HashMap[String, Any]() {
-            {
-              put("name", odoo.label)
-              put("model", odoo.name)
-              put("state", "manual")
-            }
-          })), emptyMap)).asInstanceOf[java.lang.Integer].toInt
+      val id = execute(XmlRPCHelper.toJavaList(List(new util.HashMap[String, Any]() {
+        {
+          put("name", odoo.label)
+          put("model", odoo.name)
+          put("state", "manual")
+        }
+      })), emptyMap, "ir.model", "create", uid).asInstanceOf[java.lang.Integer].toInt
       val textAnnFields = BeanHelper.findFieldAnnotations(clazz, Seq(classOf[OText])).map(_.fieldName)
       val selectionAnnFields = BeanHelper.findFieldAnnotations(clazz, Seq(classOf[OSelection])).map(_.fieldName)
       BeanHelper.findFields(clazz, OdooWS.filterNames).map {
@@ -79,8 +77,7 @@ case class OdooWS(url: String, db: String) extends LazyLogging {
       }.foreach {
         item =>
           //没有批量创建接口，只得一条条提交
-          rpc.request("/xmlrpc/2/object", "execute_kw", List(db, uid, session(uid).password, "ir.model.fields",
-            "create", XmlRPCHelper.toJavaList(List(item)), emptyMap))
+          execute(XmlRPCHelper.toJavaList(List(item)), emptyMap, "ir.model.fields", "create", uid)
       }
     }
 
@@ -92,22 +89,19 @@ case class OdooWS(url: String, db: String) extends LazyLogging {
 
     def create(record: Map[String, Any], modeName: String, uid: Int): Int = doCreate(XmlRPCHelper.toJavaMap(record), modeName, uid)
 
-    private def doCreate(record: util.Map[String, Any], modeName: String, uid: Int): Int =
-      rpc.request("/xmlrpc/2/object", "execute_kw", List(db, uid, session(uid).password, modeName, "create",
-        XmlRPCHelper.toJavaList(List(record))
-        , emptyMap)).asInstanceOf[java.lang.Integer].toInt
+    private def doCreate(record: util.Map[String, Any], modelName: String, uid: Int): Int =
+      execute(XmlRPCHelper.toJavaList(List(record)), emptyMap, modelName, "create", uid).asInstanceOf[java.lang.Integer].toInt
 
     def update[M <: OdooModel](record: M, clazz: Class[M], uid: Int): Boolean = doUpdate(record.id, OdooWS.getValues(record, 1), OdooWS.getClassInfo(clazz).name, uid)
 
     def update(id: Int, record: Map[String, Any], modeName: String, uid: Int): Boolean = doUpdate(id, XmlRPCHelper.toJavaMap(record), modeName, uid)
 
-    private def doUpdate(id: Int, record: util.Map[String, Any], modeName: String, uid: Int): Boolean =
-      rpc.request("/xmlrpc/2/object", "execute_kw", List(db, uid, session(uid).password, modeName, "write",
-        XmlRPCHelper.toJavaList(List(new util.ArrayList[Integer]() {
-          {
-            add(id)
-          }
-        }, record)), emptyMap)).asInstanceOf[java.lang.Boolean]
+    private def doUpdate(id: Int, record: util.Map[String, Any], modelName: String, uid: Int): Boolean =
+      execute(XmlRPCHelper.toJavaList(List(new util.ArrayList[Integer]() {
+        {
+          add(id)
+        }
+      }, record)), emptyMap, modelName, "write", uid).asInstanceOf[java.lang.Boolean]
 
 
     def delete[M <: OdooModel](id: Int, clazz: Class[M], uid: Int): Unit = doDelete(id, OdooWS.getClassInfo(clazz).name, uid)
@@ -118,45 +112,38 @@ case class OdooWS(url: String, db: String) extends LazyLogging {
 
     def deleteAll(modeName: String, uid: Int): Unit = doDelete(0, modeName, uid)
 
-    private def doDelete(id: Int, modeName: String, uid: Int): Unit = {
+    private def doDelete(id: Int, modelName: String, uid: Int): Unit = {
       val delIds = new util.ArrayList[Integer]()
       if (id == 0) {
         //delete all
-        delIds.addAll(findIds(List(), modeName, uid).map(_.asInstanceOf[Integer]))
+        delIds.addAll(findIds(List(), modelName, uid).map(_.asInstanceOf[Integer]))
       } else {
         delIds.add(id)
       }
-      rpc.request("/xmlrpc/2/object", "execute_kw", List(db, uid, session(uid).password, modeName, "unlink",
-        XmlRPCHelper.toJavaList(List(delIds)), emptyMap))
+
     }
 
     def count[M <: OdooModel](conditions: List[Any], clazz: Class[M], uid: Int): Int = doCount(conditions, OdooWS.getClassInfo(clazz).name, uid)
 
     def count(conditions: List[Any], modeName: String, uid: Int): Int = doCount(conditions, modeName, uid)
 
-    private def doCount(conditions: List[Any], modeName: String, uid: Int): Int =
-      rpc.request("/xmlrpc/2/object", "execute_kw",
-        List(db, uid, session(uid).password, modeName, "search_count",
-          OdooWS.packageConditions(conditions))).asInstanceOf[Integer].toInt
+    private def doCount(conditions: List[Any], modelName: String, uid: Int): Int =
+      execute(OdooWS.packageConditions(conditions), emptyMap, modelName, "search_count", uid).asInstanceOf[Integer].toInt
 
     def get[M <: OdooModel](id: Int, clazz: Class[M], uid: Int): M = OdooWS.toObject(doGet(id, OdooWS.getClassInfo(clazz).name, uid), clazz)
 
     def get(id: Int, modeName: String, uid: Int): Map[String, Any] = doGet(id, modeName, uid).toMap
 
-    private def doGet(id: Int, modeName: String, uid: Int): util.Map[String, Any] = {
-      rpc.request("/xmlrpc/2/object", "execute_kw",
-        List(db, uid, session(uid).password, modeName, "read",
-          XmlRPCHelper.toJavaList(List(id)), emptyMap)).asInstanceOf[util.HashMap[String, Any]]
+    private def doGet(id: Int, modelName: String, uid: Int): util.Map[String, Any] = {
+      execute(XmlRPCHelper.toJavaList(List(id)), emptyMap, modelName, "read", uid).asInstanceOf[util.HashMap[String, Any]]
     }
 
     def find[M <: OdooModel](conditions: List[Any], clazz: Class[M], uid: Int): List[M] = doFind(conditions, OdooWS.getClassInfo(clazz).name, uid).map(OdooWS.toObject(_, clazz))
 
     def find(conditions: List[Any], modeName: String, uid: Int): List[Map[String, Any]] = doFind(conditions, modeName, uid).map(_.asInstanceOf[util.HashMap[String, Any]].toMap)
 
-    private def doFind(conditions: List[Any], modeName: String, uid: Int): List[Any] = {
-      rpc.request("/xmlrpc/2/object", "execute_kw",
-        List(db, uid, session(uid).password, modeName, "search_read",
-          OdooWS.packageConditions(conditions), emptyMap)).asInstanceOf[Array[Any]].toList
+    private def doFind(conditions: List[Any], modelName: String, uid: Int): List[Any] = {
+      execute(OdooWS.packageConditions(conditions), emptyMap, modelName, "search_read", uid).asInstanceOf[Array[Any]].toList
     }
 
     def page[M <: OdooModel](pageNumber: Int, pageSize: Int, conditions: List[Any], clazz: Class[M], uid: Int): PageModel[M] =
@@ -165,16 +152,14 @@ case class OdooWS(url: String, db: String) extends LazyLogging {
     def page(pageNumber: Int, pageSize: Int, conditions: List[Any], modeName: String, uid: Int): PageModel[Map[String, Any]] =
       doPage(pageNumber, pageSize, conditions, modeName, classOf[Map[String, Any]], uid)
 
-    private def doPage[M](pageNumber: Int, pageSize: Int, conditions: List[Any], modeName: String, clazz: Class[M], uid: Int): PageModel[M] = {
-      val recordTotal = count(conditions, modeName, uid)
-      val result = rpc.request("/xmlrpc/2/object", "execute_kw",
-        List(db, uid, session(uid).password, modeName, "search_read",
-          OdooWS.packageConditions(conditions), new util.HashMap[String, Any]() {
-            {
-              put("offset", pageSize * (pageNumber - 1))
-              put("limit", pageSize)
-            }
-          })).asInstanceOf[Array[Any]].toList.map(OdooWS.toObject(_, clazz))
+    private def doPage[M](pageNumber: Int, pageSize: Int, conditions: List[Any], modelName: String, clazz: Class[M], uid: Int): PageModel[M] = {
+      val recordTotal = count(conditions, modelName, uid)
+      val result = execute(OdooWS.packageConditions(conditions), new util.HashMap[String, Any]() {
+        {
+          put("offset", pageSize * (pageNumber - 1))
+          put("limit", pageSize)
+        }
+      }, modelName, "search_read", uid).asInstanceOf[Array[Any]].toList.map(OdooWS.toObject(_, clazz))
       PageModel[M](pageNumber, pageSize, (recordTotal + pageSize - 1) / pageSize, recordTotal, result)
     }
 
@@ -183,9 +168,7 @@ case class OdooWS(url: String, db: String) extends LazyLogging {
     def findIds(conditions: List[Any], modelName: String, uid: Int): List[Int] = doFindIds(conditions, modelName, uid)
 
     private def doFindIds(conditions: List[Any], modelName: String, uid: Int): List[Int] =
-      rpc.request("/xmlrpc/2/object", "execute_kw",
-        List(db, uid, session(uid).password, modelName, "search",
-          OdooWS.packageConditions(conditions), emptyMap)).asInstanceOf[Array[Any]].toList.map(_.asInstanceOf[Int])
+      execute(OdooWS.packageConditions(conditions), emptyMap, modelName, "search", uid).asInstanceOf[Array[Any]].toList.map(_.asInstanceOf[Int])
 
     def pageIds[M <: OdooModel](pageNumber: Int, pageSize: Int, conditions: List[Any], clazz: Class[M], uid: Int): List[Int] =
       doPageIds(pageNumber, pageSize, conditions, OdooWS.getClassInfo(clazz).name, uid)
@@ -194,16 +177,18 @@ case class OdooWS(url: String, db: String) extends LazyLogging {
       doPageIds(pageNumber, pageSize, conditions, modelName, uid)
 
     private def doPageIds(pageNumber: Int, pageSize: Int, conditions: List[Any], modelName: String, uid: Int): List[Int] =
-      rpc.request("/xmlrpc/2/object", "execute_kw",
-        List(db, uid, session(uid).password, modelName, "search",
-          OdooWS.packageConditions(conditions), new util.HashMap[String, Any]() {
-            {
-              put("offset", pageSize * (pageNumber - 1))
-              put("limit", pageSize)
-            }
-          })).asInstanceOf[Array[Any]].toList.map(_.asInstanceOf[Int])
+      execute(OdooWS.packageConditions(conditions), new util.HashMap[String, Any]() {
+        {
+          put("offset", pageSize * (pageNumber - 1))
+          put("limit", pageSize)
+        }
+      }, modelName, "search", uid).asInstanceOf[Array[Any]].toList.map(_.asInstanceOf[Int])
   }
 
+  def execute(condition: util.ArrayList[Any], parameters: util.HashMap[String, Any], modelName: String, methodName: String, uid: Int): Any =
+    rpc.request("/xmlrpc/2/object", "execute_kw",
+      List(db, uid, session(uid).password, modelName, methodName,
+        condition, parameters))
 }
 
 
@@ -362,7 +347,7 @@ object OdooWS {
 
 
   private def packageConditions(conditions: List[Any]) = {
-    val cond = new util.ArrayList[Object]
+    val cond = new util.ArrayList[Any]
     cond.add(XmlRPCHelper.toJavaLists(conditions))
     cond
   }
