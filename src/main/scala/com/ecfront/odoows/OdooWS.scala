@@ -16,7 +16,7 @@ import scala.collection.JavaConversions._
  */
 case class OdooWS(url: String, db: String) extends LazyLogging {
 
-  private val rpc = new XmlRPCHelper(url)
+  private val rpc = new XmlRPCHelper(if (url.endsWith("/")) url.substring(0, url.length - 1) else url)
   //保存登录信息
   private val session = collection.mutable.Map[Int, LoginInfo]()
   val emptyMap = new java.util.HashMap[String, Any]()
@@ -190,11 +190,11 @@ case class OdooWS(url: String, db: String) extends LazyLogging {
       List(db, uid, session(uid).password, modelName, methodName,
         condition, parameters))
 
-  def execute[E](condition: util.ArrayList[Any], parameters: util.HashMap[String, Any], modelName: String, methodName: String, uid: Int,clazz:Class[E]): E = {
+  def execute[E](condition: util.ArrayList[Any], parameters: util.HashMap[String, Any], modelName: String, methodName: String, uid: Int, clazz: Class[E]): E = {
     val result = rpc.request("/xmlrpc/2/object", "execute_kw",
       List(db, uid, session(uid).password, modelName, methodName,
         condition, parameters))
-    OdooWS.toObject(result,clazz)
+    OdooWS.toObject(result, clazz)
   }
 }
 

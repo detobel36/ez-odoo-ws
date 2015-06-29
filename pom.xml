@@ -10,13 +10,12 @@
         <version>0.1.1</version>
     </parent>
 
-    <groupId>com.ecfront</groupId>
     <artifactId>ez-odoo-ws</artifactId>
     <name>EZ Odoo Web Services</name>
     <description>Odoo Web Services</description>
     <url>https://github.com/gudaoxuri/ez-odoo-ws</url>
     <packaging>jar</packaging>
-    <version>0.3.2</version>
+    <version>0.3.3</version>
 
     <scm>
         <connection>scm:git:git@github.com:gudaoxuri/ez-odoo-ws.git</connection>
