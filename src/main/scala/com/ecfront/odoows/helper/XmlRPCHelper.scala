@@ -21,7 +21,7 @@ case class XmlRPCHelper(baseUrl: String) extends LazyLogging {
       case e: Exception =>
         if (retryTime <= 5) {
           Thread.sleep(1000)
-          logger.debug(s"RPC execute error : ${e.getMessage} retry [${retryTime + 1}] ...")
+          logger.debug(s"RPC execute error retry [${retryTime + 1}]: ${e.getMessage}  ...")
           request(path, method, args, retryTime + 1)
         } else {
           logger.error("RPC execute error : " + e.getMessage, e)
