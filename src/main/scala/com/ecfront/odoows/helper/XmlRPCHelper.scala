@@ -12,13 +12,20 @@ case class XmlRPCHelper(baseUrl: String) extends LazyLogging {
 
   private val client = new XmlRpcClient()
 
-  def request(path: String, method: String, args: List[Any] = List()): Any = {
+  def request(path: String, method: String, args: List[Any] = List(), retryTime: Int = 0): Any = {
     val commonConfig = new XmlRpcClientConfigImpl()
     commonConfig.setServerURL(new URL(baseUrl + path))
     try {
       client.execute(commonConfig, method, args)
     } catch {
-      case e: Exception => logger.error("RPC execute error : " + e.getMessage, e)
+      case e: Exception =>
+        if (retryTime <= 5) {
+          Thread.sleep(1000)
+          logger.debug(s"RPC execute error : ${e.getMessage} retry [${retryTime + 1}] ...")
+          request(path, method, args, retryTime + 1)
+        } else {
+          logger.error("RPC execute error : " + e.getMessage, e)
+        }
     }
   }
 
@@ -31,7 +38,7 @@ object XmlRPCHelper {
   def toJavaList[E](list: List[E]): util.ArrayList[E] = new util.ArrayList[E](list)
 
   def toJavaLists(list: List[Any]): util.ArrayList[Any] = {
-    val l:List[Any] = list.map {
+    val l: List[Any] = list.map {
       case e: List[Any] => new util.ArrayList(e)
       case e: String => e
       case item => item

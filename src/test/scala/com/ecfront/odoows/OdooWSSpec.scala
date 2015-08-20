@@ -11,7 +11,7 @@ import scala.beans.BeanProperty
 class OdooWSSpec extends FunSuite {
 
   //Common
-  val ws = OdooWS("http://127.0.0.1:8069/", "odoo")
+  val ws = OdooWS("http://127.0.0.1:8069", "odoo")
   assert(ws.common.version.get("server_version").get == "8.0")
   val uid = ws.common.login("admin", "123456")
 
