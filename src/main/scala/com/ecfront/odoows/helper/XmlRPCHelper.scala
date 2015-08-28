@@ -19,7 +19,7 @@ case class XmlRPCHelper(baseUrl: String) extends LazyLogging {
       client.execute(commonConfig, method, args)
     } catch {
       case e: Exception =>
-        if (e.getMessage == null || !e.getMessage.contains("must be unique")) {
+        if (e.getMessage != null && (e.getMessage.contains("current transaction is aborted") || e.getMessage.contains("One of the documents you are trying to access has been deleted"))) {
           if (retryTime <= 8) {
             Thread.sleep(1000)
             logger.debug(s"RPC execute error retry [${retryTime + 1}]: ${e.getMessage}  ...")
@@ -28,7 +28,7 @@ case class XmlRPCHelper(baseUrl: String) extends LazyLogging {
             logger.error("RPC execute error : " + e.getMessage, e)
             throw e
           }
-        }else{
+        } else {
           logger.error("RPC execute error : " + e.getMessage, e)
           throw e
         }

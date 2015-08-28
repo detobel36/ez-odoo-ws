@@ -15,7 +15,7 @@
     <description>Odoo Web Services</description>
     <url>https://github.com/gudaoxuri/ez-odoo-ws</url>
     <packaging>jar</packaging>
-    <version>0.3.7</version>
+    <version>0.3.8</version>
 
     <scm>
         <connection>scm:git:git@github.com:gudaoxuri/ez-odoo-ws.git</connection>
