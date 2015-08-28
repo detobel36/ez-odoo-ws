@@ -19,12 +19,14 @@ case class XmlRPCHelper(baseUrl: String) extends LazyLogging {
       client.execute(commonConfig, method, args)
     } catch {
       case e: Exception =>
-        if (retryTime <= 8) {
-          Thread.sleep(1000)
-          logger.debug(s"RPC execute error retry [${retryTime + 1}]: ${e.getMessage}  ...")
-          request(path, method, args, retryTime + 1)
-        } else {
-          logger.error("RPC execute error : " + e.getMessage, e)
+        if (e.getMessage == null || !e.getMessage.contains("must be unique")) {
+          if (retryTime <= 8) {
+            Thread.sleep(1000)
+            logger.debug(s"RPC execute error retry [${retryTime + 1}]: ${e.getMessage}  ...")
+            request(path, method, args, retryTime + 1)
+          } else {
+            logger.error("RPC execute error : " + e.getMessage, e)
+          }
         }
     }
   }
