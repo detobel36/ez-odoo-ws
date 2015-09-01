@@ -17,7 +17,7 @@ EZ Odoo Web Service
     <dependency>
         <groupId>com.ecfront</groupId>
         <artifactId>ez-odoo-ws</artifactId>
-        <version>0.3.8</version>
+        <version>0.3.9</version>
     </dependency>
 
 ## Step2 定义模型（如使用原始的Map可忽略此步骤）
